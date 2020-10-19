@@ -11,6 +11,7 @@ function script.onStart()
         VERSION_NUMBER = 4.60
         -- function localizations
         local mfloor = math.floor
+        local mabs = math.abs
         local stringf = string.format
         local jdecode = json.decode
         local jencode = json.encode
@@ -233,7 +234,7 @@ function script.onStart()
             elseif useTheseSettings then
                 msgText =
                     "Updated user preferences used.  Will be saved when you exit seat.  Toggle off newSettings to use saved values"
-                    useTheseSettings = false
+                useTheseSettings = false
             else
                 msgText = "No Saved Variables Found - Stand up / leave remote to save settings"
             end
@@ -377,7 +378,7 @@ function script.onStart()
         -- _autoconf.displayCategoryPanel(weapon, weapon_size, L_TEXT("ui_lua_widget_weapon", "Weapons"), "weapon", true)
         _autoconf.displayCategoryPanel(weapon, weapon_size, "Weapons", "weapon", true)
         if antigrav ~= nil then
-            if(antigrav.getState() == 1) then
+            if (antigrav.getState() == 1) then
                 antigrav.show()
             end
         end
@@ -1017,8 +1018,7 @@ function script.onStart()
                     for k, v in pairs(AutoVariables) do
                         dbHud.setStringValue(v, jencode(nil))
                     end
-                    msgText =
-                        "Databank wiped. New variables will save after re-enter seat and exit"
+                    msgText = "Databank wiped. New variables will save after re-enter seat and exit"
                     msgTimer = 5
                     doubleCheck = false
                     valuesAreSet = false
@@ -1566,6 +1566,7 @@ function script.onStart()
                         .dim {fill:%s;stroke:%s}
                         .pdim {fill:%s;stroke:%s}
                         .red {fill:red;stroke:red}
+                        .green {fill:green;stroke:green}
                         .redout {fill:none;stroke:red}
                         .op30 {opacity:0.3}
                         .op10 {opacity:0.1}
@@ -1792,36 +1793,76 @@ function script.onStart()
 
         function DrawAltitudeDisplay(newContent, altitude, atmos)
             if (altitude < 200000 and atmos == 0) or (altitude and atmos > 0) then
-                -- Many thanks to Nistus on Discord for his assistance with the altimeter.
-                local altC = mfloor((altitude) / 10)
-                local num = 0
-                local len = 0
-                local baseY = 540
-                local tickerPath = [[<path class="dim line" d="]]
-                newContent[#newContent + 1] = [[<g class="dim txttick txtend">]]
-                for i = mfloor(altC - 25 - altC % 5 + 0.5), mfloor(altC + 25 + altC % 5 + 0.5), 5 do
-                    if (i % 10 == 0) then
-                        num = i * 10
-                        newContent[#newContent + 1] = stringf([[<text x="745" y="%f">%d</text>]],
-                                                          baseY + (-i * 5 + altitude * .5 + 5), num)
-                    end
-                    len = 5
-                    if (i % 10 == 0) then
-                        len = 30
-                    elseif (i % 5 == 0) then
-                        len = 15
-                    end
-                    tickerPath = stringf([[%s M 780 %f h %d]], tickerPath, baseY + (-i * 5 + altitude * .5), -len)
-                end
-                newContent[#newContent + 1] = "</g>"
-                newContent[#newContent + 1] = tickerPath
 
-                newContent[#newContent + 1] = stringf([["/>
-                <polygon class="bright" points="782,540 800,535 800,545"/>
-                <g class="pdim txt">
-                    <text x="770" y="380">ALTITUDE</text>
-                    <text x="770" y="390">%d m</text>
-                </g>]], mfloor(altitude))
+                local rectX = 718
+                local rectY = 520
+                local rectW = 67
+                local rectH = 21
+
+                table.insert(newContent, stringf([[
+                    <g class="bright txtbig">
+                        <rect class="line" x="%d" y="%d" width="%d" height="%d"/>        
+                        <clipPath id="alt"><rect class="line" x="%d" y="%d" width="%d" height="%d"/></clipPath>
+                        <g clip-path="url(#alt)">]], rectX, rectY, rectW, rectH, rectX + 2, rectY + 2, rectW - 4,
+                    rectH - 4))
+
+                local glyphW = 10
+                local glyphH = 15
+
+                local index = 0
+                local divisor = 1
+                local forwardFract = 0
+                while index < 6 do
+                    local digit = (altitude / divisor) % 10
+                    local intDigit = mfloor(digit)
+                    local fracDigit = mfloor((intDigit + 1) % 10)
+
+                    local fract = forwardFract
+                    if index == 0 then
+                        fract = digit - intDigit
+                    end
+
+                    local topGlyphOffset = glyphH * (fract - 1)
+                    local botGlyphOffset = topGlyphOffset + glyphH
+
+                    local x = rectX + 3 + (6 - index) * glyphW
+                    local y = rectY + 15
+                    table.insert(newContent, stringf([[
+                        <text x="%d" y="%f">%d</text>
+                        <text x="%d" y="%f">%d</text>
+                    ]], x, y + topGlyphOffset, fracDigit, x, y + botGlyphOffset, intDigit))
+                    index = index + 1
+                    divisor = divisor * 10
+                    if intDigit == 9 then
+                        forwardFract = fract
+                    else
+                        forwardFract = 0
+                    end
+                end
+                table.insert(newContent, [[</g></g>]])
+
+                -- Alternate VSpd
+                local velocity = vec3(core.getWorldVelocity())
+                local up = vec3(core.getWorldVertical()) * -1
+                local vSpd = (velocity.x * up.x) + (velocity.y * up.y) + (velocity.z * up.z)
+
+                local logvSpd = math.log(mabs(vSpd), 10)
+                if logvSpd < 0 then
+                    logvSpd = 0
+                end
+                local xR = rectX + rectW - 3 - mabs(glyphW * logvSpd)
+                local xL = xR - glyphW
+                local xMid = (xR + xL) / 2
+                local yBase = rectY - 2
+                local yTip = yBase - 10
+                local class = "green"
+                if vSpd < 0 then
+                    yBase = rectY + rectH + 2
+                    yTip = yBase + 10
+                    class = "red"
+                end
+                table.insert(newContent, stringf([[<polygon class="bright %s" points="%f,%f %f,%f %f,%f"/>]], class, xL,
+                    yBase, xMid, yTip, xR, yBase))
             end
         end
 
@@ -1929,8 +1970,9 @@ function script.onStart()
                                                   getDistanceDisplayString(Nav:getTargetGroundAltitude()))
             end
             if antigrav and antigrav.getState() == 1 and AntigravTargetAltitude ~= nil then
-                newContent[#newContent + 1] = stringf([[<text class="warn" x="%d" y="%d">Target AGG Altitude: %s</text>]],
-                    warningX, apY, getDistanceDisplayString2(AntigravTargetAltitude))
+                newContent[#newContent + 1] = stringf(
+                                                  [[<text class="warn" x="%d" y="%d">Target AGG Altitude: %s</text>]],
+                                                  warningX, apY, getDistanceDisplayString2(AntigravTargetAltitude))
             elseif AutoBrake and AutopilotTargetPlanetName ~= "None" then
                 if brakeInput == 0 then
                     newContent[#newContent + 1] = stringf(
@@ -4554,7 +4596,7 @@ function script.onActionStart(action)
         OldButtonMod = HoldAltitudeButtonModifier
         OldAntiMod = AntiGravButtonModifier
         if antigrav and antigrav.getState() == 1 then
-            if AntigravTargetAltitude ~= nil  then
+            if AntigravTargetAltitude ~= nil then
                 AntigravTargetAltitude = AntigravTargetAltitude + AntiGravButtonModifier
             else
                 AntigravTargetAltitude = desiredBaseAltitude + 100
@@ -4569,7 +4611,9 @@ function script.onActionStart(action)
         if antigrav and antigrav.getState() == 1 then
             if AntigravTargetAltitude ~= nil and AntigravTargetAltitude > 1000 then
                 AntigravTargetAltitude = AntigravTargetAltitude - AntiGravButtonModifier
-                if AntigravTargetAltitude < 1000 then AntigravTargetAltitude = 1000 end
+                if AntigravTargetAltitude < 1000 then
+                    AntigravTargetAltitude = 1000
+                end
             else
                 AntigravTargetAltitude = desiredBaseAltitude
             end
@@ -4772,7 +4816,7 @@ end
 function script.onActionLoop(action)
     if action == "groundaltitudeup" then
         if antigrav and antigrav.getState() == 1 then
-            if AntigravTargetAltitude ~= nil then 
+            if AntigravTargetAltitude ~= nil then
                 AntigravTargetAltitude = AntigravTargetAltitude + AntiGravButtonModifier
                 AntiGravButtonModifier = AntiGravButtonModifier * 1.05
             else
@@ -4789,7 +4833,9 @@ function script.onActionLoop(action)
             if AntigravTargetAltitude ~= nil and AntigravTargetAltitude > 1000 then
                 AntigravTargetAltitude = AntigravTargetAltitude - AntiGravButtonModifier
                 AntiGravButtonModifier = AntiGravButtonModifier * 1.05
-                if AntigravTargetAltitude < 1000 then AntigravTargetAltitude = 1000 end
+                if AntigravTargetAltitude < 1000 then
+                    AntigravTargetAltitude = 1000
+                end
             else
                 AntigravTargetAltitude = desiredBaseAltitude - 100
             end
