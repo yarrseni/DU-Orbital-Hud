@@ -1,5 +1,60 @@
 ## ChangeLog - Most recent changes at the top
 
+Version 4.76
+- Slightly reduced multiple for Parachute Re-Entry initial speed when > 15000m
+- Fixed AGG button showing wrong state action.
+- Fix structural integrity 99% flashing, i hope.
+
+Version 4.75
+- Fine tuned emergency warp to not try if PLANET TOO CLOSE error condition. So - Must have Emergency Warp enabled, must not be too close to planet, must have a space radar contact within EmergercyWarpDistance, then it will try to warp if all other conditions met.
+- Parachute Re-Entry now with more butt-clenching goodness.  Starts at higher speed based on initial height if > 20000m.  (Still ends up at Re-Entry speed when you hit atmo)
+
+Version 4.74 - MAJOR fix to wings and aerilons - Upgrade strongly recommended
+- It turns out that when we made the change to prevent vertical space engines firing randomly decaying orbits, we also removed Wing Engines.  This has been restored and you should see vastly improved performance from your lift surfaces, especially if you hit spacebar.  Ask Dimencia for more info.
+- Changed warp widget to show up if a target is selected and it is more than 2 SU away.
+- Added retrograde red dot to AH while in space.  Smaller dots.  Show prograde dot in atmo when going fast enough for it to matter.
+- Added support for Fuel Tank Handling talen for unslotted fuel tank calculation.  Must use value of person who placed the tank, 1-5 for each type of tank.  This is in addition to Fuel Tank Optimization.  Unslotted fuel tank percentage will closely match slotted if values of Handling and Optimization are correct.
+- Fixed Elemental Damage sometimes reporting 99% when fully healed and no damaged componet total listed.
+- Moved throttle, default position, to right side of AH to make room for Roll value.  Added throttle position x and y user parameters.
+- Updated formattime to show days and hours, or hours and min, or min and sec, or sec
+- Fixed issue with ships that had landing gear but no longer have it but databank still thought they did.
+
+Version 4.73 - Atmosphere Rocket Engine assist
+- Changed landed ground target height to user variable instead of 0 if landing gear used.  Set to hover height reported - 1 when you use alt-spacebar to just lift off ground from landed postion.  4 is M size landing gear, not countersunk, on bottom of ship.  14 appears to be Large landing gear setting.
+- Restored Glide Re-Entry as option to Parachute Re-Entry.  Still will not work well for some ships.
+- Enhanced AGG when toggling on after already in use so it reacts faster.
+- Altimeter support for negative altitude, turns red when < 0 m and counts up as you go down
+- Added atmospheric rocket engine assist, code provided by Azraeil.  Lets rockets assist in atmosphere while in throttle mode without firing constantly and wasting fuel, same as with cruise control already.  Rocket will toggle off automatically when at 85% of target speed as determined by either throttle setting * max speed in atmo (1050) or MaxGameVelocity parameter.  In cruise control mode it will toggle at 85% of desired cruise speed.
+- Added notification if Rockets are on down bottom.
+
+Version 4.72 - Variable Updates
+- IMPORTANT: Databank Wipe is advised. (You will not lose saved locations)
+- Proper formatting of local and global variables for consistency.  
+- Fixed databank wipe to not wipe saved locations.
+- Autopilot locations now in alphabetical order.
+- Changed new save locations to be named as PlanetName.# or PlanetName.# "Nearest Atmo Contact" to work with new sorting.
+- Reordered button locations to clean up around some that show conditionally.
+
+Version 4.71 - Bug Fixes
+- Fixed Interplanetary display updating with change from custom to planet and atmo to space (again)
+- Changed upper Warning Messages to not be hidden when Buttons shown
+- Fixed script error when using button to cancel Parachute Re-Entry
+- Added planet.atmos = true/false and planet.gravity = X.XX (in g) to Atlas for calculations about planets when not there.
+- Changed Strongbrakes to StrongBrakes = ((planet.gravity * 9.80665 * core.getConstructMass()) < LastMaxBrake)
+- Fixed Landing Gear sensing and operation
+- Fixed emergency warp to cancel if Emergency Warp mode toggled off or cancellation key is pressed.
+- Fixed hover engines performing brake landing.
+
+Version 4.70 - Updates And Bug Fixes
+- Changed Glide Re-Entry to Parachute Re-Entry.  Recommend brown pants.  Do NOT use if you have not performed a Brake Landing in Atmosphere
+- Fixed Interplanetary display when shifting atmo to space and custom to target
+- removed currentGroundAltitudeStabilization undefined variable
+- fuelX and fuelY user positions provided, sets fuel tank text location, (default 100, 350) setting both to 0 turns off fuel tank text display. 
+- removed seconds from formattime strings to clean up displays
+- changed fueltankoptimization value from 20% per level to 5% per level to reflect actual skill effect (affects unslotted tank amounts only)
+- Fixed re-entry button not being able to initiate re-entry
+- Fixed issue with AGG Button display and with Repair Arrow button location.
+
 Version 4.693 - Bugfix
 - Fixed Saving of Variables
 - Removed final references to AutoBrake
